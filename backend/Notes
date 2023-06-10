@@ -1,0 +1,5 @@
+gunicorn --bind 0.0.0.0:8000 foodgram.wsgi
+python3 manage.py runserver
+curl -LX GET http://127.0.0.1:8000/api/users/me/
+https://djoser.readthedocs.io/en/latest/token_endpoints.html
+https://djoser.readthedocs.io/en/latest/settings.html#serializers
