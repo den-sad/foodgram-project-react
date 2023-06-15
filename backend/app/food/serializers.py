@@ -1,25 +1,16 @@
-# import base64
 # from django.core.files.base import ContentFile
 from django.shortcuts import get_object_or_404
 from drf_extra_fields.fields import Base64ImageField
 from rest_framework import serializers
 from django.core.validators import MinValueValidator
 from .models import Tag, Ingredients, Recipes, RecipeIngredients
-from users.models import User
+from users.serializers import UserSerializer
 
 
 class TagSerializer(serializers.ModelSerializer):
     class Meta:
         model = Tag
         fields = ('__all__')
-        read_only_fields = ('id',)
-
-
-class UserSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = User
-        fields = ('email', 'id', 'username', 'first_name',
-                  'last_name')
         read_only_fields = ('id',)
 
 
@@ -81,6 +72,12 @@ class RecipeSerializer(serializers.ModelSerializer):
             'cooking_time',
         )
         read_only_fields = ('id', 'author')
+
+
+class RecipeSubscriptionSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Recipes
+        fields = ('id', 'name', 'image', 'cooking_time')
 
 
 class CreateUpdateIngredientsRecipesSerializer(serializers.ModelSerializer):
