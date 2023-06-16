@@ -7,7 +7,6 @@ class Tag(models.Model):
         max_length=20,
         verbose_name='tag',
         unique=True,
-        default='-',
     )
     color = models.CharField(max_length=7)
     slug = models.SlugField(
@@ -100,13 +99,20 @@ class RecipeIngredients(models.Model):
     def __str__(self):
         return f'{self.recipe} {self.ingredient}'
 
+    class Meta:
+        unique_together = ('recipe', 'ingredient',)
+        verbose_name = 'Ингридиент в рецепте'
+        verbose_name_plural = 'Ингридиенты в рецептах'
+
 
 class RecipeTags(models.Model):
     recipe = models.ForeignKey(Recipes, on_delete=models.CASCADE)
     tags = models.ForeignKey(Tag, on_delete=models.CASCADE)
 
-    class Meta:
-        unique_together = ('recipe', 'tags',)
-
     def __str__(self):
         return f'{self.recipe} {self.tags}'
+
+    class Meta:
+        unique_together = ('recipe', 'tags',)
+        verbose_name = 'Тэг назанченый рецепту'
+        verbose_name_plural = 'Тэги назанченные рецептам'

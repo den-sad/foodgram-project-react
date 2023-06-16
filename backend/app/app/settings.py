@@ -123,7 +123,7 @@ STATIC_ROOT = BASE_DIR / 'backend_static'
 
 MEDIA_URL = '/media/'
 # for local debug remove /
-MEDIA_ROOT = '/media'
+MEDIA_ROOT = 'media'
 
 
 CORS_ORIGIN_WHITELIST = [
