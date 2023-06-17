@@ -37,6 +37,12 @@ class RecipesAdmin(admin.ModelAdmin):
 
     assigned_tags.short_description = 'Тэги'
 
+    def favorites(self, obj):
+        count = len(obj.favorites.values('user'))
+        print(count)
+        return count
+    favorites.short_description = 'В избранном у пользователей, персон'
+
     def formfield_for_manytomany(self, db_field, request, **kwargs):
         if db_field.name == "tags":
             kwargs["queryset"] = Tag.objects.filter(is_author=True)
@@ -44,10 +50,12 @@ class RecipesAdmin(admin.ModelAdmin):
             db_field, request, **kwargs
         )
 
+    exclude = ['tags']
     list_display = (
         'name',
         'author',
         'assigned_tags',
+        'favorites'
     )
 
     search_fields = ('name', 'author')
