@@ -3,14 +3,31 @@ from django.contrib import admin
 from .models import Tag, Ingredients, Recipes, RecipeIngredients, RecipeTags
 
 
+class TagsAdmin(admin.ModelAdmin):
+    list_display = (
+        'name',
+        'color',
+    )
+    search_fields = ('name',)
+
+
 class IngredientsAdmin(admin.ModelAdmin):
     list_display = (
         'name',
         'measurement_unit',
     )
-
     search_fields = ('name',)
     list_filter = ('measurement_unit', 'name')
+
+
+class RecipeIngredientsAdmin(admin.ModelAdmin):
+    list_display = (
+        'recipe',
+        'ingredient',
+        'amount',
+    )
+    search_fields = ('recipe', 'ingredient',)
+    list_filter = ('recipe',)
 
 
 class RecipesAdmin(admin.ModelAdmin):
@@ -37,9 +54,9 @@ class RecipesAdmin(admin.ModelAdmin):
     list_filter = ('name', 'author', 'tags')
 
 
-admin.site.register(Tag)
+admin.site.register(Tag, TagsAdmin)
 admin.site.register(Ingredients, IngredientsAdmin)
 admin.site.register(Recipes, RecipesAdmin)
 
-admin.site.register(RecipeIngredients)
+admin.site.register(RecipeIngredients, RecipeIngredientsAdmin)
 admin.site.register(RecipeTags)

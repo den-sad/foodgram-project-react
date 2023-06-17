@@ -1,16 +1,25 @@
 # from django.core.files.base import ContentFile
 from django.shortcuts import get_object_or_404
+from django.db import transaction
 from drf_extra_fields.fields import Base64ImageField
 from rest_framework import serializers
+from rest_framework.exceptions import ValidationError
 from django.core.validators import MinValueValidator
 from .models import Tag, Ingredients, Recipes, RecipeIngredients
 from users.serializers import UserSerializer
 
 
 class TagSerializer(serializers.ModelSerializer):
+    color = serializers.SerializerMethodField(
+        method_name='get_color'
+    )
+
+    def get_color(self, obj):
+        return str(obj.color).upper()
+
     class Meta:
         model = Tag
-        fields = ('__all__')
+        fields = ('id', 'name', 'color', 'slug')
         read_only_fields = ('id',)
 
 
@@ -52,7 +61,14 @@ class RecipeSerializer(serializers.ModelSerializer):
         method_name='get_ingredients'
     )
     text = serializers.CharField()
-    cooking_time = serializers.FloatField()
+    cooking_time = serializers.IntegerField(
+        validators=(
+            MinValueValidator(
+                1,
+                message='Не задано dhtvz приготовления!'
+            ),
+        )
+    )
 
     def get_ingredients(self, obj):
         ingredients = RecipeIngredients.objects.filter(recipe=obj)
@@ -104,8 +120,44 @@ class RecipeCreateUpdateSerializer(serializers.ModelSerializer):
     )
     ingredients = CreateUpdateIngredientsRecipesSerializer(many=True)
     image = Base64ImageField()
-    cooking_time = serializers.FloatField()
+    cooking_time = serializers.IntegerField(
+        validators=(
+            MinValueValidator(
+                1,
+                message='Не задано время приготовления!'
+            ),
+        )
+    )
 
+    def validate_tags(self, value):
+        tags = value
+        if not tags:
+            raise ValidationError({
+                'tags': 'Отсутствует тег.'
+            })
+        tags_set = set(tags)
+        if len(tags) != len(tags_set):
+            raise ValidationError({
+                'tags': 'Дублирование тэгов.'
+            })
+        return value
+
+    def validate_ingredients(self, value):
+        ingredients = value
+        if not ingredients:
+            raise ValidationError({
+                'ingredients': 'Не указан ингредиент.'
+            })
+
+        ingredient_list = [row['id'] for row in ingredients]
+        ingredients_set = set(ingredient_list)
+        if len(ingredient_list) != len(ingredients_set):
+            raise ValidationError({
+                'tags': 'Дублирование ингредиентов.'
+            })
+        return value
+
+    @transaction.atomic
     def create(self, validated_data):
         author = self.context.get('request').user
         tags = validated_data.pop('tags')
@@ -124,6 +176,7 @@ class RecipeCreateUpdateSerializer(serializers.ModelSerializer):
             )
         return recipe
 
+    @transaction.atomic
     def update(self, instance, validated_data):
         tags = validated_data.pop('tags', None)
         if tags is not None:

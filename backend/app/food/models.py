@@ -1,5 +1,6 @@
 from django.db import models
 from django.conf import settings
+from django.core.validators import RegexValidator
 
 
 class Tag(models.Model):
@@ -8,7 +9,14 @@ class Tag(models.Model):
         verbose_name='tag',
         unique=True,
     )
-    color = models.CharField(max_length=7)
+    color = models.CharField(
+        max_length=7,
+        validators=[RegexValidator(
+            regex='^#([0-9a-fA-F]{3}){1,2}$',
+            message='Неверный цвет HEX (#AABBCC)',
+        ),
+        ]
+    )
     slug = models.SlugField(
         max_length=255,
         unique=True,
@@ -46,7 +54,7 @@ class Ingredients(models.Model):
         ordering = ['pk']
 
     def __str__(self):
-        return self.name
+        return f'{self.name}, {self.measurement_unit}'
 
 
 class Recipes(models.Model):
@@ -97,7 +105,7 @@ class RecipeIngredients(models.Model):
     amount = models.FloatField()
 
     def __str__(self):
-        return f'{self.recipe} {self.ingredient}'
+        return f'В рецепте {self.recipe} заложен ингредиент {self.ingredient}'
 
     class Meta:
         unique_together = ('recipe', 'ingredient',)
@@ -110,7 +118,7 @@ class RecipeTags(models.Model):
     tags = models.ForeignKey(Tag, on_delete=models.CASCADE)
 
     def __str__(self):
-        return f'{self.recipe} {self.tags}'
+        return f'Рецепту {self.recipe} присвоен тэг {self.tags}'
 
     class Meta:
         unique_together = ('recipe', 'tags',)

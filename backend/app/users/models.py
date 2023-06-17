@@ -6,14 +6,26 @@ from django.core.validators import RegexValidator
 
 
 class User(AbstractBaseUser, PermissionsMixin):
-    username = models.CharField(max_length=150, unique=True,
-                                validators=[
-                                    RegexValidator(
-                                        regex='^[\\w.@+-]+\\Z',
-                                        message='Набор символов неверный',
-                                    ),
-                                ])
-    email = models.EmailField(max_length=254, unique=True, blank=False)
+    username = models.CharField(
+        max_length=150,
+        unique=True,
+        validators=[
+            RegexValidator(
+                regex='^[\\w.@+-]+\\Z',
+                message='Набор символов неверный',
+            ),
+        ])
+    email = models.EmailField(
+        max_length=254,
+        unique=True,
+        blank=False,
+        validators=[
+            RegexValidator(
+                regex='^\\S+@\\S+\\.\\S+$',
+                message='Ошибка в email',
+            ),
+        ]
+    )
     first_name = models.CharField(max_length=150)
     last_name = models.CharField(max_length=150)
     date_joined = models.DateTimeField(default=timezone.now)
