@@ -1,2 +1,2 @@
 # praktikum_new_diplom
-python manage.py makemigrations food users && python manage.py migrate && python manage.py load_data_to_model Ingredients -f ../../data/ingredients.json && python manage.py createsuperuser
+python manage.py makemigrations food users && python manage.py migrate && python manage.py load_data_to_model Ingredients -f ../../data/ingredients.json && python manage.py load_data_to_model Tags && python manage.py createsuperuser
