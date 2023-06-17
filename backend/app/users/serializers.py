@@ -58,8 +58,8 @@ class SubscriptionsSerializer(UserSerializer):
     )
 
     def get_recipe_for_subscription(self):
-        from food.serializers import RecipeSubscriptionSerializer
-        return RecipeSubscriptionSerializer
+        from food.serializers import RecipeSubscriptionFavoritesShopSerializer
+        return RecipeSubscriptionFavoritesShopSerializer
 
     def get_recipes(self, obj):
         author_recipes = Recipes.objects.filter(author=obj)
