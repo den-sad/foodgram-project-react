@@ -39,7 +39,8 @@ class CustomUserViewSet(UserViewSet):
     @action(
         detail=True,
         methods=('post', 'delete'),
-        serializer_class=SubscriptionsSerializer
+        serializer_class=SubscriptionsSerializer,
+        permission_classes=(IsAuthenticated,)
     )
     def subscribe(self, request, id=None):
         user = self.request.user
@@ -76,7 +77,6 @@ class CustomUserViewSet(UserViewSet):
                 author=author
             )
             subscription.delete()
-
             return Response(status=status.HTTP_204_NO_CONTENT)
 
         return Response(status=status.HTTP_405_METHOD_NOT_ALLOWED)

@@ -49,8 +49,8 @@ class Ingredients(models.Model):
 
     class Meta:
         unique_together = ('name', 'measurement_unit',)
-        verbose_name = "Ингридиент"
-        verbose_name_plural = "Ингридиенты"
+        verbose_name = "Ингрeдиент"
+        verbose_name_plural = "Ингрeдиенты"
         ordering = ['pk']
 
     def __str__(self):
@@ -109,8 +109,8 @@ class RecipeIngredients(models.Model):
 
     class Meta:
         unique_together = ('recipe', 'ingredient',)
-        verbose_name = 'Ингридиент в рецепте'
-        verbose_name_plural = 'Ингридиенты в рецептах'
+        verbose_name = 'Ингрeдиент в рецепте'
+        verbose_name_plural = 'Ингрeдиенты в рецептах'
 
 
 class RecipeTags(models.Model):
@@ -122,5 +122,5 @@ class RecipeTags(models.Model):
 
     class Meta:
         unique_together = ('recipe', 'tags',)
-        verbose_name = 'Тэг назанченый рецепту'
-        verbose_name_plural = 'Тэги назанченные рецептам'
+        verbose_name = 'Тэг назначеный рецепту'
+        verbose_name_plural = 'Тэги назначенные рецептам'

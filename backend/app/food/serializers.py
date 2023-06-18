@@ -7,6 +7,7 @@ from rest_framework.exceptions import ValidationError
 from django.core.validators import MinValueValidator
 from .models import Tag, Ingredients, Recipes, RecipeIngredients
 from users.serializers import UserSerializer
+from users.models import Favorites, ShoppingCart
 
 
 class TagSerializer(serializers.ModelSerializer):
@@ -69,11 +70,32 @@ class RecipeSerializer(serializers.ModelSerializer):
             ),
         )
     )
+    is_favorited = serializers.SerializerMethodField(
+        method_name='get_is_favorited'
+    )
+
+    is_in_shopping_cart = serializers.SerializerMethodField(
+        method_name='get_is_in_shopping_cart'
+    )
 
     def get_ingredients(self, obj):
         ingredients = RecipeIngredients.objects.filter(recipe=obj)
         serializer = IngredientsRecipeSerializer(ingredients, many=True)
         return serializer.data
+
+    def get_is_favorited(self, obj):
+        user = self.context['request'].user
+        if user.is_anonymous:
+            return False
+        return Favorites.objects.filter(user=user, recipe=obj).exists()
+
+    def get_is_in_shopping_cart(self, obj):
+        user = self.context['request'].user
+
+        if user.is_anonymous:
+            return False
+
+        return ShoppingCart.objects.filter(user=user, recipe=obj).exists()
 
     class Meta:
         model = Recipes
@@ -82,6 +104,8 @@ class RecipeSerializer(serializers.ModelSerializer):
             'tags',
             'author',
             'ingredients',
+            'is_favorited',
+            'is_in_shopping_cart',
             'name',
             'image',
             'text',
@@ -90,7 +114,7 @@ class RecipeSerializer(serializers.ModelSerializer):
         read_only_fields = ('id', 'author')
 
 
-class RecipeSubscriptionSerializer(serializers.ModelSerializer):
+class RecipeSubscriptionFavoritesShopSerializer(serializers.ModelSerializer):
     class Meta:
         model = Recipes
         fields = ('id', 'name', 'image', 'cooking_time')
