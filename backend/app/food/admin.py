@@ -52,6 +52,7 @@ class RecipesAdmin(admin.ModelAdmin):
 
     exclude = ['tags']
     list_display = (
+        'id',
         'name',
         'author',
         'assigned_tags',
@@ -65,6 +66,5 @@ class RecipesAdmin(admin.ModelAdmin):
 admin.site.register(Tag, TagsAdmin)
 admin.site.register(Ingredients, IngredientsAdmin)
 admin.site.register(Recipes, RecipesAdmin)
-
 admin.site.register(RecipeIngredients, RecipeIngredientsAdmin)
 admin.site.register(RecipeTags)

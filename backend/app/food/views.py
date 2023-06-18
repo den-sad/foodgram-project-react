@@ -1,17 +1,21 @@
+from django.db.models import Sum
 from django.shortcuts import get_object_or_404
+from django.http import FileResponse
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import viewsets, exceptions, status
 from rest_framework.decorators import action
-from rest_framework.permissions import AllowAny
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
+from api.pagination import CustomPagination
+from users.models import Favorites, ShoppingCart
 from .serializers import (TagSerializer, IngredientsSerializer,
                           RecipeSerializer, RecipeCreateUpdateSerializer,
                           RecipeSubscriptionFavoritesShopSerializer
                           )
-from .models import Tag, Ingredients, Recipes
-from users.models import Favorites, ShoppingCart
+from .models import Tag, Ingredients, Recipes, RecipeIngredients
 from .filters import RecipeFilter
-from api.pagination import CustomPagination
+from .utils import make_pdf_file
+from users.permissions import IsAuthorOrAdmin
 
 
 class TagViewSet(viewsets.ModelViewSet):
@@ -34,7 +38,7 @@ class RecipesViewSet(viewsets.ModelViewSet):
     queryset = Recipes.objects.all()
     serializer_class = RecipeSerializer
     pagination_class = CustomPagination
-    permission_classes = (AllowAny,)
+    permission_classes = (IsAuthorOrAdmin,)
     filter_backends = (DjangoFilterBackend,)
     filterset_class = RecipeFilter
 
@@ -43,7 +47,9 @@ class RecipesViewSet(viewsets.ModelViewSet):
             return RecipeCreateUpdateSerializer
         return RecipeSerializer
 
-    @action(detail=True, methods=('post', 'delete'))
+    @action(detail=True,
+            methods=('post', 'delete'),
+            permission_classes=(IsAuthenticated,))
     def favorite(self, request, pk=None):
         user = self.request.user
         recipe = get_object_or_404(Recipes, pk=pk)
@@ -74,7 +80,9 @@ class RecipesViewSet(viewsets.ModelViewSet):
 
         return Response(status=status.HTTP_405_METHOD_NOT_ALLOWED)
 
-    @action(detail=True, methods=('post', 'delete'))
+    @action(detail=True,
+            methods=('post', 'delete'),
+            permission_classes=(IsAuthenticated,))
     def shopping_cart(self, request, pk=None):
         user = self.request.user
         recipe = get_object_or_404(Recipes, pk=pk)
@@ -104,3 +112,28 @@ class RecipesViewSet(viewsets.ModelViewSet):
             return Response(status=status.HTTP_204_NO_CONTENT)
 
         return Response(status=status.HTTP_405_METHOD_NOT_ALLOWED)
+
+    @action(
+        detail=False,
+        methods=('get',),
+        permission_classes=(IsAuthenticated,)
+    )
+    def download_shopping_cart(self, request):
+        cart = ShoppingCart.objects.filter(user=self.request.user)
+        recipes = [item.recipe for item in cart]
+        amounts = RecipeIngredients.objects.filter(
+            recipe__in=recipes).values('ingredient').annotate(
+            amount=Sum('amount')
+        )
+
+        ingredients_list = []
+        for item in amounts:
+            ingredient = Ingredients.objects.get(pk=item['ingredient'])
+            name = ingredient.name
+            measure = ingredient.measurement_unit
+            amount = item['amount']
+            ingredients_list.append(
+                f'{name}, {amount} {measure}'
+            )
+        pdf = make_pdf_file(ingredients_list)
+        return FileResponse(pdf, as_attachment=True, filename="shop.pdf")
