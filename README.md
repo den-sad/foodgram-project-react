@@ -15,6 +15,11 @@ docker compose up --build
 ```
 
 В контейнере backend выполнить команды:
+Миграции
+```
+docker compose exec backend python manage.py migrate
+```
+
 Создание суперпользователя
 ```
 docker compose exec backend python manage.py createsuperuser
