@@ -1,0 +1,38 @@
+version: '3.3'
+volumes:
+  static:
+  media:
+  pg_data:
+
+
+services:
+  db:
+    image: postgres:13
+    env_file: .env
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+
+  frontend:
+    image: densad/foodgram_frontend
+    volumes:
+      - static:/app/result_build/
+  backend:
+    depends_on:
+      - frontend
+      - db
+    image: densad/foodgram_backend
+    env_file: .env
+    volumes:
+      - static:/app/collected_static
+      - media:/media
+    command: bash -c "gunicorn --bind 0.0.0.0:8000 app.wsgi"
+
+  nginx:
+    depends_on:
+      - backend
+    image: densad/foodgram_gateway
+    ports:
+      - "9090:80"
+    volumes:
+      - static:/usr/share/nginx/html/
+      - media:/media
