@@ -134,3 +134,4 @@ dmypy.json
 collected_static/
 migrations/
 media/
+backend_static/

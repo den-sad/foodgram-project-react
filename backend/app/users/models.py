@@ -1,9 +1,40 @@
 from django.utils import timezone
 from django.db import models
-from django.contrib.auth.models import AbstractBaseUser, UserManager
+from django.contrib.auth.models import AbstractBaseUser  # , UserManager
 from django.contrib.auth.models import PermissionsMixin
 from django.core.validators import RegexValidator
 from food.models import Recipes
+from django.contrib.auth.base_user import BaseUserManager
+
+
+class UserManager(BaseUserManager):
+    use_in_migrations = True
+
+    def _create_user(self, username, email, password, **extra_fields):
+        if not username:
+            raise ValueError('The given username must be set')
+        email = self.normalize_email(email)
+        username = self.model.normalize_username(username)
+        user = self.model(username=username, email=email, **extra_fields)
+        user.set_password(password)
+        user.save(using=self._db)
+        return user
+
+    def create_user(self, username, email=None, password=None, **extra_fields):
+        extra_fields.setdefault('is_staff', False)
+        extra_fields.setdefault('is_superuser', False)
+        return self._create_user(username, email, password, **extra_fields)
+
+    def create_superuser(self, username, email, password, **extra_fields):
+        extra_fields.setdefault('is_staff', True)
+        extra_fields.setdefault('is_superuser', True)
+
+        if extra_fields.get('is_staff') is not True:
+            raise ValueError('Superuser must have is_staff=True.')
+        if extra_fields.get('is_superuser') is not True:
+            raise ValueError('Superuser must have is_superuser=True.')
+
+        return self._create_user(username, email, password, **extra_fields)
 
 
 class User(AbstractBaseUser, PermissionsMixin):
@@ -16,7 +47,7 @@ class User(AbstractBaseUser, PermissionsMixin):
                 message='Набор символов неверный',
             ),
         ])
-    email = models.EmailField(
+    email = models.CharField(
         max_length=254,
         unique=True,
         blank=False,
@@ -44,9 +75,19 @@ class User(AbstractBaseUser, PermissionsMixin):
         ordering = ['pk']
         verbose_name = 'Пользователь'
         verbose_name_plural = 'Пользователи'
+        constraints = (
+            models.UniqueConstraint(
+                fields=['username', 'email'],
+                name='unique_user_email'
+            ),
+        )
+
+    def __str__(self):
+        return self.username
 
 
 class Subscriptions(models.Model):
+    """Модель для хранения подкписок пользователя на авторов"""
     user = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
@@ -60,9 +101,6 @@ class Subscriptions(models.Model):
         verbose_name='Автор',
     )
 
-    def __str__(self):
-        return f'Пользователь {self.user} подписан на {self.author}'
-
     class Meta:
         verbose_name = 'Подписка'
         verbose_name_plural = 'Подписки'
@@ -74,8 +112,12 @@ class Subscriptions(models.Model):
             ),
         )
 
+    def __str__(self):
+        return f'Пользователь {self.userß} подписан на {self.author}'
+
 
 class Favorites(models.Model):
+    """Модель для хранения избранного пользователя"""
     user = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
@@ -88,9 +130,6 @@ class Favorites(models.Model):
         related_name='favorites',
         verbose_name='Рецепт'
     )
-
-    def __str__(self):
-        return f'Пользователь: {self.user}, избранный рецепт: {self.recipe} '
 
     class Meta:
         verbose_name = 'Избранное'
@@ -103,8 +142,14 @@ class Favorites(models.Model):
             ),
         )
 
+    def __str__(self):
+        return f'Пользователь: {self.user}, избранный рецепт: {self.recipe} '
+
 
 class ShoppingCart(models.Model):
+    """
+    Модель для хранения рецептов ингридиенты для которых необходимо купить.
+    """
     user = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
@@ -118,9 +163,6 @@ class ShoppingCart(models.Model):
         verbose_name='Рецепт'
     )
 
-    def __str__(self):
-        return f'Рецепт {self.recipe} в корзине у {self.user}'
-
     class Meta:
         verbose_name = 'Cписок покупок'
         verbose_name_plural = 'Список покупок'
@@ -131,3 +173,6 @@ class ShoppingCart(models.Model):
                 name='unique_shopping_cart'
             ),
         )
+
+    def __str__(self):
+        return f'Рецепт {self.recipe} в корзине у {self.user}'

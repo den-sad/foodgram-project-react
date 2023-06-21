@@ -18,24 +18,25 @@ from .utils import make_pdf_file
 from users.permissions import IsAuthorOrAdmin
 
 
-class TagViewSet(viewsets.ModelViewSet):
+class BasicViewSet(viewsets.ModelViewSet):
+    pagination_class = None
+    http_method_names = ['get', 'head']
+    permission_classes = (AllowAny,)
+
+
+class TagViewSet(BasicViewSet, viewsets.ModelViewSet):
     queryset = Tag.objects.all()
     serializer_class = TagSerializer
-    pagination_class = None
-    http_method_names = ['get', 'head']
-    permission_classes = (AllowAny,)
 
 
-class IngredientsViewSet(viewsets.ModelViewSet):
+class IngredientsViewSet(BasicViewSet, viewsets.ModelViewSet):
     queryset = Ingredients.objects.all()
     serializer_class = IngredientsSerializer
-    pagination_class = None
-    http_method_names = ['get', 'head']
-    permission_classes = (AllowAny,)
 
 
 class RecipesViewSet(viewsets.ModelViewSet):
-    queryset = Recipes.objects.all()
+    queryset = Recipes.objects.select_related(
+        'author').prefetch_related('ingredients', 'tags').all()
     serializer_class = RecipeSerializer
     pagination_class = CustomPagination
     permission_classes = (IsAuthorOrAdmin,)
@@ -46,6 +47,27 @@ class RecipesViewSet(viewsets.ModelViewSet):
         if self.action in ('create', 'partial_update'):
             return RecipeCreateUpdateSerializer
         return RecipeSerializer
+
+    def _perform_post(self, request, objs, recipe, error_msg):
+        user = self.request.user
+        if objs.exists():
+            raise exceptions.ValidationError(
+                error_msg
+            )
+        objs.model.objects.create(user=user, recipe=recipe)
+        serializer = RecipeSubscriptionFavoritesShopSerializer(
+            recipe,
+            context={'request': request}
+        )
+        return serializer
+
+    def _perform_delete(self, obj, error_msg):
+        if not obj.exists():
+            raise exceptions.ValidationError(
+                error_msg
+            )
+        obj.delete()
+        return True
 
     @action(detail=True,
             methods=('post', 'delete'),
@@ -59,24 +81,13 @@ class RecipesViewSet(viewsets.ModelViewSet):
         )
 
         if self.request.method == 'POST':
-            if favorite.exists():
-                raise exceptions.ValidationError(
-                    'Рецепт уже в избранном.'
-                )
-            Favorites.objects.create(user=user, recipe=recipe)
-            serializer = RecipeSubscriptionFavoritesShopSerializer(
-                recipe,
-                context={'request': request}
-            )
+            serializer = self._perform_post(request, favorite,
+                                            recipe, 'Рецепт уже в избранном.')
             return Response(serializer.data, status=status.HTTP_201_CREATED)
 
         if self.request.method == 'DELETE':
-            if not favorite.exists():
-                raise exceptions.ValidationError(
-                    'В избранном рецепт не найден.'
-                )
-            favorite.delete()
-            return Response(status=status.HTTP_204_NO_CONTENT)
+            if self._perform_delete(favorite, 'В избранном рецепт не найден.'):
+                return Response(status=status.HTTP_204_NO_CONTENT)
 
         return Response(status=status.HTTP_405_METHOD_NOT_ALLOWED)
 
@@ -92,24 +103,14 @@ class RecipesViewSet(viewsets.ModelViewSet):
         )
 
         if self.request.method == 'POST':
-            if shopping_cart.exists():
-                raise exceptions.ValidationError(
-                    'Рецепт уже в корзине.'
-                )
-            ShoppingCart.objects.create(user=user, recipe=recipe)
-            serializer = RecipeSubscriptionFavoritesShopSerializer(
-                recipe,
-                context={'request': request}
-            )
+            serializer = self._perform_post(request, shopping_cart,
+                                            recipe, 'Рецепт уже в корзине.')
             return Response(serializer.data, status=status.HTTP_201_CREATED)
 
         if self.request.method == 'DELETE':
-            if not shopping_cart.exists():
-                raise exceptions.ValidationError(
-                    'В корзине рецепт не найден.'
-                )
-            shopping_cart.delete()
-            return Response(status=status.HTTP_204_NO_CONTENT)
+            if self._perform_delete(shopping_cart,
+                                    'В корзине рецепт не найден!.'):
+                return Response(status=status.HTTP_204_NO_CONTENT)
 
         return Response(status=status.HTTP_405_METHOD_NOT_ALLOWED)
 

@@ -1,15 +1,24 @@
+from colorfield.fields import ColorField
 from django.db import models
 from django.conf import settings
 from django.core.validators import RegexValidator
 
 
 class Tag(models.Model):
+    '''Тэги применяемые к рецептам'''
+    COLOR_PALETTE = [
+        ("#FFFFFF", "white", ),
+        ("#000000", "black", ),
+    ]
+
     name = models.CharField(
         max_length=20,
         verbose_name='tag',
         unique=True,
     )
-    color = models.CharField(
+    color = ColorField(
+        default='#FF0000',
+        samples=COLOR_PALETTE,
         max_length=7,
         validators=[RegexValidator(
             regex='^#([0-9a-fA-F]{3}){1,2}$',
@@ -34,6 +43,7 @@ class Tag(models.Model):
 
 
 class Ingredients(models.Model):
+    '''Ингридиенты применяемые в рецептах'''
     name = models.CharField(
         max_length=200,
         verbose_name='Наименование',
@@ -58,6 +68,8 @@ class Ingredients(models.Model):
 
 
 class Recipes(models.Model):
+    '''Модель рецептов, связана с тэгами и ингридиентами
+    по типу многие ко многим'''
     author = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
@@ -100,27 +112,29 @@ class Recipes(models.Model):
 
 
 class RecipeIngredients(models.Model):
+    '''Модель для свзяи рецепта и ингридиента'''
     recipe = models.ForeignKey(Recipes, on_delete=models.CASCADE)
     ingredient = models.ForeignKey(Ingredients, on_delete=models.CASCADE)
     amount = models.FloatField()
-
-    def __str__(self):
-        return f'В рецепте {self.recipe} заложен ингредиент {self.ingredient}'
 
     class Meta:
         unique_together = ('recipe', 'ingredient',)
         verbose_name = 'Ингрeдиент в рецепте'
         verbose_name_plural = 'Ингрeдиенты в рецептах'
 
+    def __str__(self):
+        return f'В рецепте {self.recipe} заложен ингредиент {self.ingredient}'
+
 
 class RecipeTags(models.Model):
+    '''Модель для свзяи рецепта и тэга'''
     recipe = models.ForeignKey(Recipes, on_delete=models.CASCADE)
     tags = models.ForeignKey(Tag, on_delete=models.CASCADE)
-
-    def __str__(self):
-        return f'Рецепту {self.recipe} присвоен тэг {self.tags}'
 
     class Meta:
         unique_together = ('recipe', 'tags',)
         verbose_name = 'Тэг назначеный рецепту'
         verbose_name_plural = 'Тэги назначенные рецептам'
+
+    def __str__(self):
+        return f'Рецепту {self.recipe} присвоен тэг {self.tags}'

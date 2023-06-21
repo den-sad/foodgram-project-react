@@ -1,9 +1,12 @@
 from itertools import chain
 from django.contrib import admin
+from django.utils.safestring import mark_safe
 from .models import Tag, Ingredients, Recipes, RecipeIngredients, RecipeTags
 
 
 class TagsAdmin(admin.ModelAdmin):
+    prepopulated_fields = {"slug": ("name",)}
+
     list_display = (
         'name',
         'color',
@@ -30,7 +33,48 @@ class RecipeIngredientsAdmin(admin.ModelAdmin):
     list_filter = ('recipe',)
 
 
+class RecipeIngredientsInline(admin.TabularInline):
+    model = RecipeIngredients
+    min_num = 1
+
+
+class RecipeTagsInline(admin.TabularInline):
+    model = RecipeTags
+    min_num = 1
+
+
 class RecipesAdmin(admin.ModelAdmin):
+
+    inlines = [
+        RecipeIngredientsInline,
+        RecipeTagsInline,
+    ]
+    fields = (
+        'author',
+        'name',
+        'image',
+        'preview',
+        'text',
+        'cooking_time',
+    )
+    list_display = (
+        'id',
+        'name',
+        'author',
+        'assigned_tags',
+        'favorites'
+    )
+
+    exclude = ['tags']
+    search_fields = ('name', 'author')
+    list_filter = ('name', 'author', 'tags')
+    readonly_fields = ["preview"]
+
+    def preview(self, obj):
+        return mark_safe(
+            f'<img height="300" width="300" src="{obj.image.url}">'
+        )
+
     def assigned_tags(self, obj):
         a = obj.tags.values_list('name')
         return list(chain.from_iterable(a))
@@ -39,7 +83,6 @@ class RecipesAdmin(admin.ModelAdmin):
 
     def favorites(self, obj):
         count = len(obj.favorites.values('user'))
-        print(count)
         return count
     favorites.short_description = 'В избранном у пользователей, персон'
 
@@ -49,18 +92,6 @@ class RecipesAdmin(admin.ModelAdmin):
         return super(RecipesAdmin, self).formfield_for_manytomany(
             db_field, request, **kwargs
         )
-
-    exclude = ['tags']
-    list_display = (
-        'id',
-        'name',
-        'author',
-        'assigned_tags',
-        'favorites'
-    )
-
-    search_fields = ('name', 'author')
-    list_filter = ('name', 'author', 'tags')
 
 
 admin.site.register(Tag, TagsAdmin)
