@@ -13,8 +13,8 @@ SECRET_KEY = str(os.getenv(
 
 DEBUG = False
 
-ALLOWED_HOSTS = ['*']
-
+ALLOWED_HOSTS = ['foodgram.virtual-it.ru', '127.0.0.1', 'localhost']
+CSRF_TRUSTED_ORIGINS = ['https://foodgram.virtual-it.ru']
 
 INSTALLED_APPS = [
     'django.contrib.admin',
