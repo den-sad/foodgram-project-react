@@ -55,36 +55,31 @@ class CreateUserSerializer(serializers.ModelSerializer):
 
     def validate_username(self, data):
         username = data
-        res = re.sub('^[\\w.@+-]+\\Z', "", username, count=0, flags=0)
+        if len(username) < 3:
+            raise serializers.ValidationError(
+                "username: не менее 3х символов.")
+        res = re.sub(r"[a-zA-z0-9_-]", "", username)
         if res != '':
             raise serializers.ValidationError(
-                "username пользователя не соответствует формату")
-        res = re.sub(r'^[\/()* .+-:;"\']', "", username, count=0, flags=0)
-        if res != username:
-            raise serializers.ValidationError(
-                "username пользователя не должен начинаться со спецсимвола")
+                f"username: символы {res} недопустимы.")
         return data
 
     def validate_email(self, data):
         email = data
+        if len(email) < 4:
+            raise serializers.ValidationError(
+                "email: не короче 4х символов.")
+
         if User.objects.filter(email=email).exists():
             raise serializers.ValidationError(
                 "email уже зарегистрирован")
-        res = re.sub(
-            '[0-9]{1,3}.[0-9]{1,3}.[0-9]{1,3}.[0-9]{1,3}', "",
-            email, count=0, flags=0)
-        if res != email:
+
+        res = re.sub(r"[a-zA-z0-9_\-@\.]", "", email)
+        if res != '':
             raise serializers.ValidationError(
-                "email не может содержать IP адрес")
-        res = re.sub(r'^[\\\/()\* .+-:;"\']', "", email, count=0, flags=0)
-        if res != email:
-            raise serializers.ValidationError(
-                "email не может начинаться спецсимволами")
-        res = re.sub('[а-яА-Я]?', "", email, count=0, flags=0)
-        if res != email:
-            raise serializers.ValidationError(
-                "email символы кирилицы недопустимы")
-        res = re.sub('^\\S+@\\S+\\.\\S+$', "", email, count=0, flags=0)
+                f"email: символы {res} недопустимы.")
+
+        res = re.sub(r"^\S+@\S+\.\S+$", "", email)
         if res != '':
             raise serializers.ValidationError(
                 "email неверного формата")
