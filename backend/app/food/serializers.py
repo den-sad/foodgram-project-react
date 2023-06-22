@@ -32,24 +32,14 @@ class IngredientsSerializer(serializers.ModelSerializer):
 
 
 class IngredientsRecipeSerializer(serializers.ModelSerializer):
-    id = serializers.SerializerMethodField(method_name='get_recipe_id')
-    name = serializers.SerializerMethodField(method_name='get_recipe_name')
-    measurement_unit = serializers.SerializerMethodField(
-        method_name='get_ingredient_measurement_unit'
-    )
+    id = serializers.ReadOnlyField(source='ingredient.id')
+    name = serializers.ReadOnlyField(source='ingredient.name')
+    measurement_unit = serializers.ReadOnlyField(
+        source='ingredient.measurement_unit')
 
     class Meta:
         model = RecipeIngredients
         fields = ('id', 'name', 'measurement_unit', 'amount')
-
-    def get_recipe_id(self, obj):
-        return obj.ingredient.id
-
-    def get_recipe_name(self, obj):
-        return obj.ingredient.name
-
-    def get_ingredient_measurement_unit(self, obj):
-        return obj.ingredient.measurement_unit
 
 
 class RecipeSerializer(serializers.ModelSerializer):
@@ -66,7 +56,7 @@ class RecipeSerializer(serializers.ModelSerializer):
         validators=(
             MinValueValidator(
                 1,
-                message='Не задано dhtvz приготовления!'
+                message='Не задано время приготовления!'
             ),
         )
     )
@@ -95,8 +85,9 @@ class RecipeSerializer(serializers.ModelSerializer):
         read_only_fields = ('id', 'author')
 
     def get_ingredients(self, obj):
-        ingredients = RecipeIngredients.objects.select_related(
-            'ingredient').filter(recipe=obj)
+        ingredients = RecipeIngredients.objects.filter(
+            recipe=obj).select_related(
+            'ingredient')
         serializer = IngredientsRecipeSerializer(ingredients, many=True)
         return serializer.data
 

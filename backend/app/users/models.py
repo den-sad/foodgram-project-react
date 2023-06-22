@@ -1,12 +1,11 @@
 from django.utils import timezone
 from django.db import models
-from django.contrib.auth.models import AbstractBaseUser
+from django.contrib.auth.models import AbstractUser
 from django.contrib.auth.models import PermissionsMixin
 from food.models import Recipes
-from django.contrib.auth.base_user import BaseUserManager
 
 
-class User(AbstractBaseUser, PermissionsMixin):
+class User(AbstractUser, PermissionsMixin):
     username = models.CharField(
         max_length=150,
         unique=True,
@@ -26,8 +25,6 @@ class User(AbstractBaseUser, PermissionsMixin):
 
     USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = ['username', 'first_name', 'last_name']
-
-    objects = BaseUserManager()
 
     class Meta:
         ordering = ['pk']

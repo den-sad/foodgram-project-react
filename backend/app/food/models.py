@@ -88,7 +88,7 @@ class Recipes(models.Model):
     )
     text = models.TextField()
 
-    cooking_time = models.IntegerField(
+    cooking_time = models.PositiveSmallIntegerField(
         blank=False,
     )
     ingredients = models.ManyToManyField(
@@ -113,8 +113,10 @@ class Recipes(models.Model):
 
 class RecipeIngredients(models.Model):
     '''Модель для свзяи рецепта и ингридиента'''
-    recipe = models.ForeignKey(Recipes, on_delete=models.CASCADE)
-    ingredient = models.ForeignKey(Ingredients, on_delete=models.CASCADE)
+    recipe = models.ForeignKey(Recipes, on_delete=models.CASCADE,
+                               related_name='recipeingredient')
+    ingredient = models.ForeignKey(Ingredients, on_delete=models.CASCADE,
+                                   related_name='recipeingredient')
     amount = models.FloatField()
 
     class Meta:
@@ -128,8 +130,10 @@ class RecipeIngredients(models.Model):
 
 class RecipeTags(models.Model):
     '''Модель для свзяи рецепта и тэга'''
-    recipe = models.ForeignKey(Recipes, on_delete=models.CASCADE)
-    tags = models.ForeignKey(Tag, on_delete=models.CASCADE)
+    recipe = models.ForeignKey(Recipes, on_delete=models.CASCADE,
+                               related_name='recipeitag')
+    tags = models.ForeignKey(Tag, on_delete=models.CASCADE,
+                             related_name='recipeitag')
 
     class Meta:
         unique_together = ('recipe', 'tags',)

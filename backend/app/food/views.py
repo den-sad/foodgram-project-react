@@ -24,12 +24,12 @@ class BasicViewSet(viewsets.ModelViewSet):
     permission_classes = (AllowAny,)
 
 
-class TagViewSet(BasicViewSet, viewsets.ModelViewSet):
+class TagViewSet(BasicViewSet):
     queryset = Tag.objects.all()
     serializer_class = TagSerializer
 
 
-class IngredientsViewSet(BasicViewSet, viewsets.ModelViewSet):
+class IngredientsViewSet(BasicViewSet):
     queryset = Ingredients.objects.all()
     serializer_class = IngredientsSerializer
 
