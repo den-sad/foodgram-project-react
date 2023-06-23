@@ -57,18 +57,18 @@ class CreateUserSerializer(serializers.ModelSerializer):
         username = data
         if len(username) < 3:
             raise serializers.ValidationError(
-                "username: не менее 3х символов.")
+                "username не менее 3х символов.")
         res = re.sub(r"[a-zA-z0-9_-]", "", username)
         if res != '':
             raise serializers.ValidationError(
-                f"username: символы {res} недопустимы.")
+                f"username символы {res} недопустимы.")
         return data
 
     def validate_email(self, data):
         email = data
         if len(email) < 4:
             raise serializers.ValidationError(
-                "email: не короче 4х символов.")
+                "email не короче 4х символов.")
 
         if User.objects.filter(email=email).exists():
             raise serializers.ValidationError(
@@ -77,7 +77,7 @@ class CreateUserSerializer(serializers.ModelSerializer):
         res = re.sub(r"[a-zA-z0-9_\-@\.]", "", email)
         if res != '':
             raise serializers.ValidationError(
-                f"email: символы {res} недопустимы.")
+                f"email символы {res} недопустимы.")
 
         res = re.sub(r"^\S+@\S+\.\S+$", "", email)
         if res != '':

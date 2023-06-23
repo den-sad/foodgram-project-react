@@ -59,6 +59,7 @@ class RecipesAdmin(admin.ModelAdmin):
     )
     list_display = (
         'id',
+        'preview',
         'name',
         'author',
         'assigned_tags',

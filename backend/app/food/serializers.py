@@ -3,7 +3,6 @@ from django.shortcuts import get_object_or_404
 from django.db import transaction
 from drf_extra_fields.fields import Base64ImageField
 from rest_framework import serializers
-from rest_framework.exceptions import ValidationError
 from django.core.validators import MinValueValidator
 from .models import Tag, Ingredients, Recipes, RecipeIngredients
 from users.serializers import UserSerializer
@@ -56,7 +55,7 @@ class RecipeSerializer(serializers.ModelSerializer):
         validators=(
             MinValueValidator(
                 1,
-                message='Не задано время приготовления!'
+                message="Не задано время приготовления!"
             ),
         )
     )
@@ -116,7 +115,7 @@ class CreateUpdateIngredientsRecipesSerializer(serializers.ModelSerializer):
         validators=(
             MinValueValidator(
                 1,
-                message='Не задано количество!'
+                message="Не задано количество!"
             ),
         )
     )
@@ -138,7 +137,7 @@ class RecipeCreateUpdateSerializer(serializers.ModelSerializer):
         validators=(
             MinValueValidator(
                 1,
-                message='Не задано время приготовления!'
+                message="Не задано время приготовления!"
             ),
         )
     )
@@ -159,29 +158,30 @@ class RecipeCreateUpdateSerializer(serializers.ModelSerializer):
     def validate_tags(self, value):
         tags = value
         if not tags:
-            raise ValidationError({
-                'tags': 'Отсутствует тег.'
-            })
+            raise serializers.ValidationError(
+                [{"tags": ["Отсутствуют тэги."]}]
+            )
         tags_set = set(tags)
         if len(tags) != len(tags_set):
-            raise ValidationError({
-                'tags': 'Дублирование тэгов.'
-            })
+            raise serializers.ValidationError(
+                [{"tags": ["Дублирование тэгов."]}]
+            )
         return value
 
     def validate_ingredients(self, value):
         ingredients = value
         if not ingredients:
-            raise ValidationError({
-                'ingredients': 'Не указан ингредиент.'
-            })
+            raise serializers.ValidationError(
+                [{"ingredient": ["не заданы ингредиенты."]}]
+            )
 
         ingredient_list = [row['id'] for row in ingredients]
-        ingredients_set = set(ingredient_list)
-        if len(ingredient_list) != len(ingredients_set):
-            raise ValidationError({
-                'tags': 'Дублирование ингредиентов.'
-            })
+        for ingredient in ingredient_list:
+            if ingredient_list.count(ingredient) > 1:
+                raise serializers.ValidationError(
+                    [{"ingredient": ["дублирование ингредиента."]}]
+                )
+
         return value
 
     def _get_ingredient_data(self, ingredient):
